@@ -38,6 +38,12 @@ python scanner.py https://example.com --output report.json
 python scanner.py https://example.com --output report.html --format html
 ```
 
+## 📸 Screenshot
+
+Example terminal output from a scan:
+
+![Mini Vulnerability Scanner terminal output](screenshots/terminal-output.png)
+
 ## Project Structure
 
 ```text
@@ -48,6 +54,8 @@ mini-vuln-scanner/
 ├── LICENSE            # MIT license
 ├── SECURITY.md        # Security and responsible disclosure guidance
 ├── CONTRIBUTING.md    # Contribution guidelines
+├── screenshots/       # Project screenshots
+│   └── terminal-output.png
 └── .gitignore         # Ignore generated/local files
 ```
 
