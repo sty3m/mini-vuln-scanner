@@ -12,6 +12,18 @@ A lightweight, ethical web reconnaissance tool written in Python that checks a t
 - **TLS/SSL check** — verifies HTTPS is enforced and reports certificate expiry
 - **Reports** — export findings as JSON or a clean HTML report
 
+## ⚡ Quick Security Checklist
+
+Before scanning a target, confirm that you own it or have explicit authorization. For development and learning, use a local lab such as `localhost` or an intentionally vulnerable application.
+
+### Recommended workflow
+
+1. Start with a low-impact reconnaissance scan.
+2. Review the security-header and cookie findings first.
+3. Validate potential issues manually before treating them as vulnerabilities.
+4. Save JSON/HTML reports for documentation and remediation tracking.
+5. Never use the scanner to exploit, brute-force, or modify unauthorized systems.
+
 ## ⚠️ Legal / Ethical Notice
 
 **Only scan systems you own or have explicit written authorization to test.**
