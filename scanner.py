@@ -18,10 +18,11 @@ or equivalent legislation in your jurisdiction.
 Usage:
     python scanner.py https://example.com
     python scanner.py https://example.com --output report.json
-    python scanner.py https://example.com --output report.pdf --format pdf
+    python scanner.py https://example.com --output report.html --format html
 """
 
 import argparse
+import html
 import json
 import re
 import socket
@@ -168,11 +169,11 @@ def check_js_libraries(url: str, session: requests.Session) -> list:
     findings = []
     try:
         resp = session.get(url, timeout=REQUEST_TIMEOUT)
-        html = resp.text
+        html_text = resp.text
     except requests.RequestException:
         return findings
     for lib, meta in JS_LIBRARY_PATTERNS.items():
-        match = re.search(meta["regex"], html, re.IGNORECASE)
+        match = re.search(meta["regex"], html_text, re.IGNORECASE)
         if match:
             version = match.group(1)
             try:
@@ -246,12 +247,32 @@ def save_json(report: dict, path: str):
 
 
 def save_html(report: dict, path: str):
+    # Escape report values before inserting them into HTML. Scan data can
+    # contain attacker-controlled text such as headers, URLs, and cookie names.
+    target = html.escape(str(report.get("target", "")), quote=True)
+    scanned_at = html.escape(str(report.get("scanned_at", "")), quote=True)
+    summary = html.escape(str(report.get("summary", {})), quote=True)
+
     rows = ""
     for f in report["findings"]:
-        rows += ("<tr>" f"<td>{f['check']}</td>" f"<td>{f.get('item', '-')}</td>" f"<td class='sev-{f.get('severity','Info').lower()}'>{f.get('severity','Info')}</td>" f"<td>{f['detail']}</td>" f"<td>{f.get('advice', '')}</td>" "</tr>")
-    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Vulnerability Scan Report - {report['target']}</title><style>body {{ font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 2rem; background:#0f1117; color:#e6e6e6; }} h1 {{ color:#fff; }} table {{ width:100%; border-collapse: collapse; margin-top:1rem; }} th, td {{ padding: 8px 12px; border-bottom: 1px solid #333; text-align:left; font-size:14px;}} th {{ background:#1c1f2b; }} .sev-high {{ color:#ff5c5c; font-weight:bold; }} .sev-medium {{ color:#ffc857; font-weight:bold; }} .sev-low {{ color:#5cc8ff; }} .sev-ok {{ color:#5cff8f; }} .sev-info {{ color:#aaa; }} .sev-error {{ color:#ff8a5c; }} .meta {{ color:#999; font-size: 13px; }}</style></head><body><h1>Vulnerability Scan Report</h1><p class="meta">Target: <strong>{report['target']}</strong><br>Scanned at: {report['scanned_at']}</p><p class="meta">Summary: {report['summary']}</p><table><tr><th>Check</th><th>Item</th><th>Severity</th><th>Detail</th><th>Advice</th></tr>{rows}</table></body></html>"""
+        check = html.escape(str(f.get("check", "")), quote=True)
+        item = html.escape(str(f.get("item", "-")), quote=True)
+        severity = html.escape(str(f.get("severity", "Info")), quote=True)
+        detail = html.escape(str(f.get("detail", "")), quote=True)
+        advice = html.escape(str(f.get("advice", "")), quote=True)
+        rows += (
+            "<tr>"
+            f"<td>{check}</td>"
+            f"<td>{item}</td>"
+            f"<td class='sev-{severity.lower()}'>{severity}</td>"
+            f"<td>{detail}</td>"
+            f"<td>{advice}</td>"
+            "</tr>"
+        )
+
+    html_report = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Vulnerability Scan Report - {target}</title><style>body {{ font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 2rem; background:#0f1117; color:#e6e6e6; }} h1 {{ color:#fff; }} table {{ width:100%; border-collapse: collapse; margin-top:1rem; }} th, td {{ padding: 8px 12px; border-bottom: 1px solid #333; text-align:left; font-size:14px;}} th {{ background:#1c1f2b; }} .sev-high {{ color:#ff5c5c; font-weight:bold; }} .sev-medium {{ color:#ffc857; font-weight:bold; }} .sev-low {{ color:#5cc8ff; }} .sev-ok {{ color:#5cff8f; }} .sev-info {{ color:#aaa; }} .sev-error {{ color:#ff8a5c; }} .meta {{ color:#999; font-size: 13px; }}</style></head><body><h1>Vulnerability Scan Report</h1><p class="meta">Target: <strong>{target}</strong><br>Scanned at: {scanned_at}</p><p class="meta">Summary: {summary}</p><table><tr><th>Check</th><th>Item</th><th>Severity</th><th>Detail</th><th>Advice</th></tr>{rows}</table></body></html>"""
     with open(path, "w") as f:
-        f.write(html)
+        f.write(html_report)
     print(f"\n{Fore.GREEN}Report saved to {path}{Style.RESET_ALL}")
 
 
