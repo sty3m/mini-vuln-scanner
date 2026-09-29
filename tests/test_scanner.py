@@ -121,7 +121,10 @@ def test_cookie_check_reports_missing_security_attributes():
     from scanner import check_cookies
 
     jar = requests.cookies.RequestsCookieJar()
-    jar.set_cookie(requests.cookies.create_cookie("session", "value"))
+    cookie = requests.cookies.create_cookie("session", "value")
+    # requests creates cookies with HttpOnly by default; remove it for this fixture.
+    cookie._rest.pop("HttpOnly", None)
+    jar.set_cookie(cookie)
     findings = check_cookies(
         "https://example.test", FakeSession(FakeResponse("https://example.test", cookies=jar))
     )

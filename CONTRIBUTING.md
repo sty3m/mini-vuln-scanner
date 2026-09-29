@@ -16,6 +16,26 @@ Thanks for your interest in improving Mini Vulnerability Scanner.
 3. Update documentation when behavior or usage changes.
 4. Open a pull request with a clear description of what changed and why.
 
+## Development setup
+
+Create an isolated environment and install the development dependencies:
+
+```bash
+python -m venv .venv
+# Activate .venv using the command for your operating system.
+python -m pip install -r requirements-dev.txt
+```
+
+## Running tests
+
+Run the local test suite before opening a pull request:
+
+```bash
+python -m pytest -q
+```
+
+GitHub Actions runs the same suite on Python 3.10, 3.11, and 3.12.
+
 ## Code style
 
 Follow standard Python conventions and keep functions small and readable. Prefer clear error handling and avoid unnecessary changes outside the scope of the contribution.
