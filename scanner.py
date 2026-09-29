@@ -96,6 +96,11 @@ REQUEST_TIMEOUT = 8
 USER_AGENT = "MiniVulnScanner/1.0 (+educational-use)"
 
 
+def utc_timestamp() -> str:
+    """Return an ISO 8601 UTC timestamp with a single trailing Z."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def normalize_url(url: str) -> str:
     if not re.match(r"^https?://", url):
         url = "https://" + url
@@ -214,7 +219,7 @@ def run_scan(url: str) -> dict:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     print(f"\n{Fore.CYAN}Scanning target: {url}{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}Started at: {datetime.now(timezone.utc).isoformat()}Z{Style.RESET_ALL}\n")
+    print(f"{Fore.CYAN}Started at: {utc_timestamp()}{Style.RESET_ALL}\n")
     all_findings = []
     checks = [("Security Headers", check_security_headers, (url, session)), ("Cookie Security", check_cookies, (url, session)), ("Exposed Sensitive Files", check_sensitive_paths, (url, session)), ("Outdated JS Libraries", check_js_libraries, (url, session)), ("TLS/SSL Configuration", check_tls, (url,))]
     for label, func, args in checks:
@@ -229,7 +234,7 @@ def run_scan(url: str) -> dict:
     for sev in ("High", "Medium", "Low", "OK", "Info", "Error"):
         if summary.get(sev):
             print(f"  {colored_severity(sev)}: {summary[sev]}")
-    return {"target": url, "scanned_at": datetime.now(timezone.utc).isoformat() + "Z", "summary": summary, "findings": all_findings}
+    return {"target": url, "scanned_at": utc_timestamp(), "summary": summary, "findings": all_findings}
 
 
 def summarize(findings: list) -> dict:
