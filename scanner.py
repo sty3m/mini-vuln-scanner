@@ -102,8 +102,22 @@ def utc_timestamp() -> str:
 
 
 def normalize_url(url: str) -> str:
-    if not re.match(r"^https?://", url):
+    url = url.strip()
+    if not re.match(r"^[a-z][a-z0-9+.-]*://", url, re.IGNORECASE):
         url = "https://" + url
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme.lower() not in {"http", "https"}:
+            raise ValueError("URL must use HTTP or HTTPS.")
+        if not parsed.hostname:
+            raise ValueError("URL must include a hostname.")
+        if parsed.username is not None or parsed.password is not None:
+            raise ValueError("URL must not include embedded credentials.")
+        parsed.port  # Accessing this property validates the port number.
+    except ValueError as exc:
+        if str(exc).startswith("URL "):
+            raise
+        raise ValueError("Provide a valid HTTP or HTTPS URL.") from None
     return url.rstrip("/")
 
 
@@ -292,7 +306,10 @@ def main():
     parser.add_argument("--output", "-o", help="Path to save the report file")
     parser.add_argument("--format", "-f", choices=["json", "html"], default="json", help="Report format (default: json)")
     args = parser.parse_args()
-    report = run_scan(args.url)
+    try:
+        report = run_scan(args.url)
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.output:
         if args.format == "html":
             save_html(report, args.output)
