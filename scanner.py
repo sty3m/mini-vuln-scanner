@@ -163,10 +163,9 @@ def check_cookies(url: str, session: requests.Session) -> list:
         issues = []
         if not cookie.secure:
             issues.append("missing 'Secure' flag")
-        httponly = cookie._rest.get("HttpOnly") if hasattr(cookie, "_rest") else None
-        if httponly is None:
+        if not cookie.has_nonstandard_attr("HttpOnly"):
             issues.append("missing 'HttpOnly' flag")
-        samesite = cookie._rest.get("SameSite") if hasattr(cookie, "_rest") else None
+        samesite = cookie.get_nonstandard_attr("SameSite")
         if samesite is None:
             issues.append("missing 'SameSite' attribute")
         if issues:
