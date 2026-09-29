@@ -55,3 +55,98 @@ def test_summarize_counts_findings_by_severity():
 
 def test_version_tuple_parses_major_minor_patch():
     assert version_tuple("3.4.1") == (3, 4, 1)
+
+
+class FakeResponse:
+    def __init__(self, url, headers=None, cookies=None):
+        self.url = url
+        self.headers = headers or {}
+        self.cookies = cookies or []
+
+
+class FakeSession:
+    def __init__(self, response):
+        self.response = response
+
+    def get(self, *args, **kwargs):
+        return self.response
+
+
+def test_security_headers_skip_hsts_for_http_response():
+    from scanner import check_security_headers
+
+    findings = check_security_headers(
+        "http://example.test", FakeSession(FakeResponse("http://example.test"))
+    )
+
+    assert not any(
+        finding.get("item") == "Strict-Transport-Security" for finding in findings
+    )
+
+
+def test_security_headers_report_missing_hsts_for_https_response():
+    from scanner import check_security_headers
+
+    findings = check_security_headers(
+        "https://example.test", FakeSession(FakeResponse("https://example.test"))
+    )
+
+    hsts = next(
+        finding for finding in findings
+        if finding.get("item") == "Strict-Transport-Security"
+    )
+    assert hsts["severity"] == "High"
+
+
+def test_security_headers_check_final_url_after_redirect():
+    from scanner import check_security_headers
+
+    response = FakeResponse(
+        "https://example.test",
+        headers={"Strict-Transport-Security": "max-age=31536000"},
+    )
+    findings = check_security_headers(
+        "http://example.test", FakeSession(response)
+    )
+
+    hsts = next(
+        finding for finding in findings
+        if finding.get("item") == "Strict-Transport-Security"
+    )
+    assert hsts["severity"] == "OK"
+
+
+def test_cookie_check_reports_missing_security_attributes():
+    import requests
+    from scanner import check_cookies
+
+    jar = requests.cookies.RequestsCookieJar()
+    jar.set_cookie(requests.cookies.create_cookie("session", "value"))
+    findings = check_cookies(
+        "https://example.test", FakeSession(FakeResponse("https://example.test", cookies=jar))
+    )
+
+    assert len(findings) == 1
+    assert findings[0]["severity"] == "Medium"
+    assert "Secure" in findings[0]["detail"]
+    assert "HttpOnly" in findings[0]["detail"]
+    assert "SameSite" in findings[0]["detail"]
+
+
+def test_cookie_check_accepts_all_security_attributes():
+    import requests
+    from scanner import check_cookies
+
+    jar = requests.cookies.RequestsCookieJar()
+    cookie = requests.cookies.create_cookie(
+        "session",
+        "value",
+        secure=True,
+        rest={"HttpOnly": None, "SameSite": "Strict"},
+    )
+    jar.set_cookie(cookie)
+    findings = check_cookies(
+        "https://example.test", FakeSession(FakeResponse("https://example.test", cookies=jar))
+    )
+
+    assert findings[0]["severity"] == "OK"
