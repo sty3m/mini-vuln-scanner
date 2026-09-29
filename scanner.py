@@ -123,7 +123,12 @@ def check_security_headers(url: str, session: requests.Session) -> list:
     except requests.RequestException as e:
         return [{"check": "Security Headers", "severity": "Error", "detail": str(e)}]
     headers = resp.headers
+    response_is_https = urlparse(getattr(resp, "url", url)).scheme.lower() == "https"
     for header, meta in SECURITY_HEADERS.items():
+        # Browsers ignore HSTS received over HTTP, so it is not a meaningful
+        # finding unless the final response was served over HTTPS.
+        if header == "Strict-Transport-Security" and not response_is_https:
+            continue
         if header not in headers:
             findings.append({"check": "Security Headers", "item": header, "severity": meta["severity"], "detail": f"Missing header: {header}", "advice": meta["advice"]})
         else:
