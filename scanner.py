@@ -196,8 +196,8 @@ def check_js_libraries(url: str, session: requests.Session, timeout: float = REQ
     try:
         resp = session.get(url, timeout=timeout)
         html_text = resp.text
-    except requests.RequestException:
-        return findings
+    except requests.RequestException as exc:
+        return [{"check": "Outdated JS Library", "severity": "Error", "detail": f"Could not inspect JavaScript libraries: {exc}"}]
     for lib, meta in JS_LIBRARY_PATTERNS.items():
         match = re.search(meta["regex"], html_text, re.IGNORECASE)
         if match:
