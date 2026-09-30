@@ -9,3 +9,6 @@
 Page-based checks also include an informational finding when the final page
 response is an HTTP 4xx or 5xx status. This helps distinguish a complete page
 scan from a response such as a missing page or server error.
+
+Both formats are written as UTF-8. The HTML report includes a labeled findings
+table so assistive technologies can identify each column.

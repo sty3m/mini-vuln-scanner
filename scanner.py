@@ -325,8 +325,42 @@ def save_html(report: dict, path: str):
             "</tr>"
         )
 
-    html_report = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Vulnerability Scan Report - {target}</title><style>body {{ font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 2rem; background:#0f1117; color:#e6e6e6; }} h1 {{ color:#fff; }} table {{ width:100%; border-collapse: collapse; margin-top:1rem; }} th, td {{ padding: 8px 12px; border-bottom: 1px solid #333; text-align:left; font-size:14px;}} th {{ background:#1c1f2b; }} .sev-high {{ color:#ff5c5c; font-weight:bold; }} .sev-medium {{ color:#ffc857; font-weight:bold; }} .sev-low {{ color:#5cc8ff; }} .sev-ok {{ color:#5cff8f; }} .sev-info {{ color:#aaa; }} .sev-error {{ color:#ff8a5c; }} .meta {{ color:#999; font-size: 13px; }}</style></head><body><h1>Vulnerability Scan Report</h1><p class="meta">Target: <strong>{target}</strong><br>Scanned at: {scanned_at}</p><p class="meta">Summary: {summary}</p><table><tr><th>Check</th><th>Item</th><th>Severity</th><th>Detail</th><th>Advice</th></tr>{rows}</table></body></html>"""
-    with open(path, "w") as f:
+    html_report = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vulnerability Scan Report - {target}</title>
+  <style>
+    body {{ font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 2rem; background:#0f1117; color:#e6e6e6; }}
+    h1 {{ color:#fff; }}
+    table {{ width:100%; border-collapse: collapse; margin-top:1rem; }}
+    th, td {{ padding: 8px 12px; border-bottom: 1px solid #333; text-align:left; font-size:14px; }}
+    th {{ background:#1c1f2b; }}
+    .sev-high {{ color:#ff5c5c; font-weight:bold; }}
+    .sev-medium {{ color:#ffc857; font-weight:bold; }}
+    .sev-low {{ color:#5cc8ff; }}
+    .sev-ok {{ color:#5cff8f; }}
+    .sev-info {{ color:#aaa; }}
+    .sev-error {{ color:#ff8a5c; }}
+    .meta {{ color:#999; font-size: 13px; }}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Vulnerability Scan Report</h1>
+    <p class="meta">Target: <strong>{target}</strong><br>Scanned at: {scanned_at}</p>
+    <p class="meta">Summary: {summary}</p>
+    <table>
+      <caption>Scan findings</caption>
+      <thead><tr><th scope="col">Check</th><th scope="col">Item</th><th scope="col">Severity</th><th scope="col">Detail</th><th scope="col">Advice</th></tr></thead>
+      <tbody>{rows}</tbody>
+    </table>
+  </main>
+</body>
+</html>
+"""
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write(html_report)
     print(f"\n{Fore.GREEN}Report saved to {path}{Style.RESET_ALL}")
 
