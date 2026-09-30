@@ -171,6 +171,8 @@ def check_cookies(url: str, session: requests.Session, timeout: float = REQUEST_
         samesite = cookie.get_nonstandard_attr("SameSite")
         if samesite is None:
             issues.append("missing 'SameSite' attribute")
+        elif str(samesite).strip().lower() not in {"lax", "strict", "none"}:
+            issues.append("invalid 'SameSite' value")
         if issues:
             findings.append({"check": "Cookie Security", "item": cookie.name, "severity": "Medium", "detail": f"Cookie '{cookie.name}' issues: {', '.join(issues)}", "advice": "Set Secure, HttpOnly, and SameSite attributes on all session cookies."})
         else:
