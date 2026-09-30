@@ -237,19 +237,19 @@ def check_tls(url: str, timeout: float = REQUEST_TIMEOUT) -> list:
 
 def run_scan(url: str, timeout: float = REQUEST_TIMEOUT) -> dict:
     url = normalize_url(url)
-    session = requests.Session()
-    session.headers.update({"User-Agent": USER_AGENT})
     print(f"\n{Fore.CYAN}Scanning target: {url}{Style.RESET_ALL}")
     print(f"{Fore.CYAN}Started at: {utc_timestamp()}{Style.RESET_ALL}\n")
-    all_findings = []
-    checks = [("Security Headers", check_security_headers, (url, session, timeout)), ("Cookie Security", check_cookies, (url, session, timeout)), ("Exposed Sensitive Files", check_sensitive_paths, (url, session, timeout)), ("Outdated JS Libraries", check_js_libraries, (url, session, timeout)), ("TLS/SSL Configuration", check_tls, (url, timeout))]
-    for label, func, args in checks:
-        print(f"{Fore.MAGENTA}[*] Running: {label}...{Style.RESET_ALL}")
-        results = func(*args)
-        for f in results:
-            sev = f.get("severity", "Info")
-            print(f"    [{colored_severity(sev)}] {f.get('item', f['check'])}: {f['detail']}")
-        all_findings.extend(results)
+    with requests.Session() as session:
+        session.headers.update({"User-Agent": USER_AGENT})
+        all_findings = []
+        checks = [("Security Headers", check_security_headers, (url, session, timeout)), ("Cookie Security", check_cookies, (url, session, timeout)), ("Exposed Sensitive Files", check_sensitive_paths, (url, session, timeout)), ("Outdated JS Libraries", check_js_libraries, (url, session, timeout)), ("TLS/SSL Configuration", check_tls, (url, timeout))]
+        for label, func, args in checks:
+            print(f"{Fore.MAGENTA}[*] Running: {label}...{Style.RESET_ALL}")
+            results = func(*args)
+            for f in results:
+                sev = f.get("severity", "Info")
+                print(f"    [{colored_severity(sev)}] {f.get('item', f['check'])}: {f['detail']}")
+            all_findings.extend(results)
     summary = summarize(all_findings)
     print(f"\n{Fore.CYAN}--- Summary ---{Style.RESET_ALL}")
     for sev in ("High", "Medium", "Low", "OK", "Info", "Error"):
