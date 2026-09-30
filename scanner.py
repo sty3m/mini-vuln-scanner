@@ -295,8 +295,9 @@ def summarize(findings: list) -> dict:
 
 
 def save_json(report: dict, path: str):
-    with open(path, "w") as f:
-        json.dump(report, f, indent=2)
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
+        f.write("\n")
     print(f"\n{Fore.GREEN}Report saved to {path}{Style.RESET_ALL}")
 
 
