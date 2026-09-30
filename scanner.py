@@ -148,6 +148,8 @@ def check_security_headers(url: str, session: requests.Session, timeout: float =
             continue
         if header not in headers:
             findings.append({"check": "Security Headers", "item": header, "severity": meta["severity"], "detail": f"Missing header: {header}", "advice": meta["advice"]})
+        elif header == "X-Content-Type-Options" and headers[header].strip().lower() != "nosniff":
+            findings.append({"check": "Security Headers", "item": header, "severity": meta["severity"], "detail": f"Unexpected value for {header}: {headers[header]}", "advice": "Set X-Content-Type-Options to nosniff."})
         else:
             findings.append({"check": "Security Headers", "item": header, "severity": "OK", "detail": f"{header}: {headers[header]}"})
     for banner_header in ("Server", "X-Powered-By"):
