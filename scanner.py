@@ -140,6 +140,9 @@ def check_security_headers(url: str, session: requests.Session, timeout: float =
     except requests.RequestException as e:
         return [{"check": "Security Headers", "severity": "Error", "detail": str(e)}]
     headers = resp.headers
+    status_code = getattr(resp, "status_code", None)
+    if status_code is not None and status_code >= 400:
+        findings.append({"check": "HTTP Response", "item": "Response status", "severity": "Info", "detail": f"The final page response returned HTTP {status_code}; interpret page-based findings in this context."})
     response_is_https = urlparse(getattr(resp, "url", url)).scheme.lower() == "https"
     for header, meta in SECURITY_HEADERS.items():
         # Browsers ignore HSTS received over HTTP, so it is not a meaningful
