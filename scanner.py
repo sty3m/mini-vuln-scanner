@@ -118,7 +118,9 @@ def normalize_url(url: str) -> str:
         if str(exc).startswith("URL "):
             raise
         raise ValueError("Provide a valid HTTP or HTTPS URL.") from None
-    return url.rstrip("/")
+    # URL fragments are never sent in HTTP requests. Remove them so the
+    # displayed target matches the resource that the scanner actually checks.
+    return url.split("#", 1)[0].rstrip("/")
 
 
 def version_tuple(v: str):
