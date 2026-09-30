@@ -81,6 +81,11 @@ mini-vuln-scanner/
 
 The scanner sends a small number of read-only HTTP GET requests to the target — it never attempts to exploit, inject, brute-force, or modify anything. Each check module returns a list of findings with a severity rating (`High` / `Medium` / `Low` / `OK` / `Info`), which are aggregated into a single report.
 
+JavaScript library detection is heuristic: it searches the returned page HTML for
+known version patterns and reports each distinct match. It does not inspect
+downloaded bundles, runtime dependencies, or libraries loaded after the page
+runs, so validate version findings manually.
+
 ## Roadmap / Ideas for extension
 
 - [ ] Add CVE lookup via the NVD API for detected library versions

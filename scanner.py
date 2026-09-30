@@ -214,9 +214,8 @@ def check_js_libraries(url: str, session: requests.Session, timeout: float = REQ
     except requests.RequestException as exc:
         return [{"check": "Outdated JS Library", "severity": "Error", "detail": f"Could not inspect JavaScript libraries: {exc}"}]
     for lib, meta in JS_LIBRARY_PATTERNS.items():
-        match = re.search(meta["regex"], html_text, re.IGNORECASE)
-        if match:
-            version = match.group(1)
+        versions = dict.fromkeys(re.findall(meta["regex"], html_text, re.IGNORECASE))
+        for version in versions:
             try:
                 if version_tuple(version) < meta["vulnerable_below"]:
                     findings.append({"check": "Outdated JS Library", "item": lib, "severity": "Medium", "detail": f"Detected {lib} v{version} (potentially outdated)", "advice": meta["note"]})
