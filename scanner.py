@@ -183,11 +183,17 @@ def check_sensitive_paths(url: str, session: requests.Session, timeout: float = 
     for path in SENSITIVE_PATHS:
         target = urljoin(url + "/", path)
         try:
-            resp = session.get(target, timeout=timeout, allow_redirects=False)
+            resp = session.get(target, timeout=timeout, allow_redirects=False, stream=True)
         except requests.RequestException:
             continue
-        if resp.status_code == 200 and len(resp.content) > 0:
-            findings.append({"check": "Exposed Sensitive Files", "item": path, "severity": "High", "detail": f"Publicly accessible: {target} (HTTP {resp.status_code})", "advice": "Remove or block public access to this file immediately."})
+        try:
+            # Only one small chunk is needed to distinguish an empty response.
+            # Avoid buffering a potentially large exposed backup or database.
+            has_content = next(resp.iter_content(chunk_size=1024), b"")
+            if resp.status_code == 200 and has_content:
+                findings.append({"check": "Exposed Sensitive Files", "item": path, "severity": "High", "detail": f"Publicly accessible: {target} (HTTP {resp.status_code})", "advice": "Remove or block public access to this file immediately."})
+        finally:
+            resp.close()
     return findings
 
 
