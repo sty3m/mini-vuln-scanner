@@ -14,7 +14,7 @@ A lightweight, ethical web reconnaissance tool written in Python that checks a t
 
 ## ⚡ Quick Security Checklist
 
-Before scanning a target, confirm that you own it or have explicit authorization. For development and learning, use a local lab such as `localhost` or an intentionally vulnerable application.
+Before scanning a target, confirm that you own it or have explicit authorization. For development and learning, use a local lab such as `localhost` or an intentionally vulnerable application. See [safe scanning practices](docs/safe-scanning.md) for the request volume and timeout behavior.
 
 ### Recommended workflow
 
