@@ -235,7 +235,20 @@ def check_tls(url: str, timeout: float = REQUEST_TIMEOUT) -> list:
                 days_left = (not_after - datetime.now(timezone.utc)).days
                 severity = "OK" if days_left > 30 else "Medium" if days_left > 0 else "High"
                 findings.append({"check": "TLS/SSL", "item": "Certificate Expiry", "severity": severity, "detail": f"Certificate expires in {days_left} days ({cert['notAfter']})"})
-                findings.append({"check": "TLS/SSL", "item": "Protocol", "severity": "Info", "detail": f"Negotiated protocol: {ssock.version()}"})
+                protocol = ssock.version() or "Unknown"
+                if protocol in {"SSLv3", "TLSv1", "TLSv1.1"}:
+                    protocol_severity = "Medium"
+                    advice = "Disable obsolete protocol versions and require TLS 1.2 or newer."
+                elif protocol in {"TLSv1.2", "TLSv1.3"}:
+                    protocol_severity = "OK"
+                    advice = None
+                else:
+                    protocol_severity = "Info"
+                    advice = None
+                protocol_finding = {"check": "TLS/SSL", "item": "Protocol", "severity": protocol_severity, "detail": f"Negotiated protocol: {protocol}"}
+                if advice:
+                    protocol_finding["advice"] = advice
+                findings.append(protocol_finding)
     except Exception as e:
         findings.append({"check": "TLS/SSL", "severity": "Error", "detail": f"Could not verify TLS configuration: {e}"})
     return findings

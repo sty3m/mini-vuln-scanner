@@ -9,7 +9,7 @@ A lightweight, ethical web reconnaissance tool written in Python that checks a t
 - **Cookie security** — checks session cookies for `Secure`, `HttpOnly`, and `SameSite` attributes
 - **Exposed sensitive files** — probes for commonly leaked files (`.git/HEAD`, `.env`, backup files, `.htaccess`, credentials files, etc.)
 - **Outdated JS library detection** — heuristic detection of old jQuery / Bootstrap / AngularJS versions with known CVEs
-- **TLS/SSL check** — verifies HTTPS is enforced and reports certificate expiry
+- **TLS/SSL check** — verifies HTTPS is enforced, reports certificate expiry, and flags obsolete negotiated protocols ([details](docs/tls-check.md))
 - **Reports** — export findings as JSON or a clean HTML report
 
 ## ⚡ Quick Security Checklist
