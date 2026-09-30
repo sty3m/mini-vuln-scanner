@@ -24,6 +24,7 @@ Usage:
 import argparse
 import html
 import json
+import math
 import re
 import socket
 import ssl
@@ -132,10 +133,10 @@ def colored_severity(sev: str) -> str:
     return f"{colors.get(sev, '')}{sev}{Style.RESET_ALL}"
 
 
-def check_security_headers(url: str, session: requests.Session) -> list:
+def check_security_headers(url: str, session: requests.Session, timeout: float = REQUEST_TIMEOUT) -> list:
     findings = []
     try:
-        resp = session.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
+        resp = session.get(url, timeout=timeout, allow_redirects=True)
     except requests.RequestException as e:
         return [{"check": "Security Headers", "severity": "Error", "detail": str(e)}]
     headers = resp.headers
@@ -155,10 +156,10 @@ def check_security_headers(url: str, session: requests.Session) -> list:
     return findings
 
 
-def check_cookies(url: str, session: requests.Session) -> list:
+def check_cookies(url: str, session: requests.Session, timeout: float = REQUEST_TIMEOUT) -> list:
     findings = []
     try:
-        resp = session.get(url, timeout=REQUEST_TIMEOUT)
+        resp = session.get(url, timeout=timeout)
     except requests.RequestException:
         return findings
     for cookie in resp.cookies:
@@ -177,12 +178,12 @@ def check_cookies(url: str, session: requests.Session) -> list:
     return findings
 
 
-def check_sensitive_paths(url: str, session: requests.Session) -> list:
+def check_sensitive_paths(url: str, session: requests.Session, timeout: float = REQUEST_TIMEOUT) -> list:
     findings = []
     for path in SENSITIVE_PATHS:
         target = urljoin(url + "/", path)
         try:
-            resp = session.get(target, timeout=REQUEST_TIMEOUT, allow_redirects=False)
+            resp = session.get(target, timeout=timeout, allow_redirects=False)
         except requests.RequestException:
             continue
         if resp.status_code == 200 and len(resp.content) > 0:
@@ -190,10 +191,10 @@ def check_sensitive_paths(url: str, session: requests.Session) -> list:
     return findings
 
 
-def check_js_libraries(url: str, session: requests.Session) -> list:
+def check_js_libraries(url: str, session: requests.Session, timeout: float = REQUEST_TIMEOUT) -> list:
     findings = []
     try:
-        resp = session.get(url, timeout=REQUEST_TIMEOUT)
+        resp = session.get(url, timeout=timeout)
         html_text = resp.text
     except requests.RequestException:
         return findings
@@ -211,7 +212,7 @@ def check_js_libraries(url: str, session: requests.Session) -> list:
     return findings
 
 
-def check_tls(url: str) -> list:
+def check_tls(url: str, timeout: float = REQUEST_TIMEOUT) -> list:
     findings = []
     parsed = urlparse(url)
     if parsed.scheme != "https":
@@ -221,7 +222,7 @@ def check_tls(url: str) -> list:
     port = parsed.port or 443
     try:
         ctx = ssl.create_default_context()
-        with socket.create_connection((host, port), timeout=REQUEST_TIMEOUT) as sock:
+        with socket.create_connection((host, port), timeout=timeout) as sock:
             with ctx.wrap_socket(sock, server_hostname=host) as ssock:
                 cert = ssock.getpeercert()
                 not_after = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z").replace(tzinfo=timezone.utc)
@@ -234,14 +235,14 @@ def check_tls(url: str) -> list:
     return findings
 
 
-def run_scan(url: str) -> dict:
+def run_scan(url: str, timeout: float = REQUEST_TIMEOUT) -> dict:
     url = normalize_url(url)
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     print(f"\n{Fore.CYAN}Scanning target: {url}{Style.RESET_ALL}")
     print(f"{Fore.CYAN}Started at: {utc_timestamp()}{Style.RESET_ALL}\n")
     all_findings = []
-    checks = [("Security Headers", check_security_headers, (url, session)), ("Cookie Security", check_cookies, (url, session)), ("Exposed Sensitive Files", check_sensitive_paths, (url, session)), ("Outdated JS Libraries", check_js_libraries, (url, session)), ("TLS/SSL Configuration", check_tls, (url,))]
+    checks = [("Security Headers", check_security_headers, (url, session, timeout)), ("Cookie Security", check_cookies, (url, session, timeout)), ("Exposed Sensitive Files", check_sensitive_paths, (url, session, timeout)), ("Outdated JS Libraries", check_js_libraries, (url, session, timeout)), ("TLS/SSL Configuration", check_tls, (url, timeout))]
     for label, func, args in checks:
         print(f"{Fore.MAGENTA}[*] Running: {label}...{Style.RESET_ALL}")
         results = func(*args)
@@ -301,14 +302,26 @@ def save_html(report: dict, path: str):
     print(f"\n{Fore.GREEN}Report saved to {path}{Style.RESET_ALL}")
 
 
+def positive_timeout(value: str) -> float:
+    """Parse a finite, positive timeout value for the command line."""
+    try:
+        timeout = float(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("timeout must be a number of seconds") from exc
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise argparse.ArgumentTypeError("timeout must be a finite number greater than zero")
+    return timeout
+
+
 def main():
     parser = argparse.ArgumentParser(description="Mini Vulnerability Scanner - ethical web recon tool. Only scan systems you own or are authorized to test.")
     parser.add_argument("url", help="Target URL, e.g. https://example.com")
     parser.add_argument("--output", "-o", help="Path to save the report file")
     parser.add_argument("--format", "-f", choices=["json", "html"], default="json", help="Report format (default: json)")
+    parser.add_argument("--timeout", type=positive_timeout, default=REQUEST_TIMEOUT, metavar="SECONDS", help=f"Per-request timeout in seconds (default: {REQUEST_TIMEOUT})")
     args = parser.parse_args()
     try:
-        report = run_scan(args.url)
+        report = run_scan(args.url, timeout=args.timeout)
     except ValueError as exc:
         parser.error(str(exc))
     if args.output:

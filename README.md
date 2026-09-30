@@ -48,7 +48,13 @@ python scanner.py https://example.com --output report.json
 
 # Save as a styled HTML report
 python scanner.py https://example.com --output report.html --format html
+
+# Allow up to 15 seconds for each network request
+python scanner.py https://example.com --timeout 15
 ```
+
+The per-request timeout defaults to 8 seconds. Increase it for slow authorized
+targets, or lower it to keep individual checks brief.
 
 ## 📸 Screenshot
 
