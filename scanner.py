@@ -160,8 +160,8 @@ def check_cookies(url: str, session: requests.Session, timeout: float = REQUEST_
     findings = []
     try:
         resp = session.get(url, timeout=timeout)
-    except requests.RequestException:
-        return findings
+    except requests.RequestException as exc:
+        return [{"check": "Cookie Security", "severity": "Error", "detail": f"Could not inspect cookies: {exc}"}]
     for cookie in resp.cookies:
         issues = []
         if not cookie.secure:
